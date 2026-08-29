@@ -1,0 +1,26 @@
+# Binaries
+bin/
+
+# Go build artifacts
+*.exe
+*.out
+*.test
+
+# Dependency directories
+vendor/
+
+# IDE / editor files
+*.idea
+*.vscode
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+*.tar
+
+# Environment files
+.env
+.env.example
+.gitattributes
