@@ -3,8 +3,6 @@ import {
   Calendar, 
   Filter, 
   DollarSign, 
-  ArrowUpRight, 
-  ArrowDownRight, 
   RotateCcw,
   BarChart2,
   Wallet,
@@ -21,18 +19,44 @@ const DashboardPage: React.FC = () => {
     totalEntradas: 0,
     totalGastos: 0,
     saldoAtual: 0,
-    mediaGastos: 0
+    mediaGastos: 0,
+    mediaEntradas: 0
   });
 
   const loadData = async () => {
-    const data = await fetchDashboardStats(period);
-    setStats({
-      totalEntradas: data.totalEntradas,
-      totalGastos: data.totalGastos,
-      saldoAtual: data.saldoAtual,
-      mediaGastos: data.mediaGastos
-    });
-    setTransactions(data.transactions);
+    // Generate dates based on period
+    const now = new Date();
+    let startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    let endDate = now;
+
+    if (period === 'last_month') {
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+    } else if (period === 'last_30') {
+      startDate = new Date();
+      startDate.setDate(now.getDate() - 30);
+    } else if (period === 'last_90') {
+      startDate = new Date();
+      startDate.setDate(now.getDate() - 90);
+    } else if (period === 'year') {
+      startDate = new Date(now.getFullYear(), 0, 1);
+    }
+
+    const data = await fetchDashboardStats(
+      startDate.toISOString().split('T')[0],
+      endDate.toISOString().split('T')[0]
+    );
+
+    if (data) {
+      setStats({
+        totalEntradas: data.totalEntradas || 0,
+        totalGastos: data.totalGastos || 0,
+        saldoAtual: data.saldoAtual || 0,
+        mediaGastos: data.mediaGastos || 0,
+        mediaEntradas: data.mediaEntradas || 0,
+      });
+      setTransactions(data.transactions || []);
+    }
   };
 
   useEffect(() => {
@@ -94,36 +118,7 @@ const DashboardPage: React.FC = () => {
             </select>
           </div>
 
-          {/* Moeda Dropdown */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            backgroundColor: '#f8fafc',
-            border: '1px solid #cbd5e1',
-            borderRadius: '10px',
-            padding: '8px 12px',
-            fontSize: '13px',
-            fontWeight: 600
-          }}>
-            <select
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              style={{
-                border: 'none',
-                background: 'transparent',
-                outline: 'none',
-                fontWeight: 600,
-                color: '#0f172a',
-                cursor: 'pointer',
-                fontSize: '13px'
-              }}
-            >
-              <option value="BRL">BRL (R$)</option>
-              <option value="USD">USD ($)</option>
-              <option value="EUR">EUR (€)</option>
-            </select>
-          </div>
+        
 
           {/* Reset Filters button */}
           <button
@@ -211,11 +206,6 @@ const DashboardPage: React.FC = () => {
               {stats.totalEntradas.toLocaleString('pt-BR', { style: 'currency', currency: currency })}
             </h2>
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#d1fae5', marginTop: '18px' }}>
-            <ArrowUpRight size={16} />
-            <span>+12.5% vs mês anterior</span>
-          </div>
         </div>
 
         {/* Card 2: Total Gastos / Quantidade Gasta */}
@@ -243,11 +233,6 @@ const DashboardPage: React.FC = () => {
             <h2 style={{ fontSize: '28px', fontWeight: 800, marginTop: '12px', color: '#0f172a', letterSpacing: '-0.5px' }}>
               {stats.totalGastos.toLocaleString('pt-BR', { style: 'currency', currency: currency })}
             </h2>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#ef4444', marginTop: '18px' }}>
-            <ArrowDownRight size={16} />
-            <span>-5.2% controlado vs meta</span>
           </div>
         </div>
 
@@ -279,11 +264,6 @@ const DashboardPage: React.FC = () => {
               {stats.saldoAtual.toLocaleString('pt-BR', { style: 'currency', currency: currency })}
             </h2>
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#ffffff', marginTop: '18px' }}>
-            <ArrowUpRight size={16} />
-            <span>+15.7% de economia líquida</span>
-          </div>
         </div>
 
         {/* Card 4: Média de Gastos por Dia */}
@@ -309,7 +289,7 @@ const DashboardPage: React.FC = () => {
               </div>
             </div>
             <h2 style={{ fontSize: '28px', fontWeight: 800, marginTop: '12px', color: '#0f172a', letterSpacing: '-0.5px' }}>
-              {stats.mediaGastos.toLocaleString('pt-BR', { style: 'currency', currency: currency })}
+              {(stats.mediaGastos/30).toLocaleString('pt-BR', { style: 'currency', currency: currency })}
             </h2>
           </div>
 

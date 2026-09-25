@@ -55,17 +55,7 @@ const getInitialStoredTransactions = (): Transaction[] => {
       // fallback
     }
   }
-  
-  const defaultItems: Transaction[] = [
-    { id: '1', tipo: 'entrada', descricao: 'Salário Mensal', valor: 6500.00, data: '2026-08-01', categoria: 'Salário & Remuneração', metodoPagamento: 'Pix' },
-    { id: '2', tipo: 'entrada', descricao: 'Projeto Freelance Design', valor: 1950.00, data: '2026-08-10', categoria: 'Freelance & Projetos', metodoPagamento: 'Pix' },
-    { id: '3', tipo: 'gasto', descricao: 'Supermercado Mensal', valor: 850.50, data: '2026-08-05', categoria: 'Alimentação & Restaurantes', metodoPagamento: 'Cartão de Crédito' },
-    { id: '4', tipo: 'gasto', descricao: 'Aluguel do Ap', valor: 1500.00, data: '2026-08-05', categoria: 'Moradia & Contas', metodoPagamento: 'Boleto' },
-    { id: '5', tipo: 'gasto', descricao: 'Combustível Carro', valor: 280.00, data: '2026-08-12', categoria: 'Transporte & Combustível', metodoPagamento: 'Cartão de Débito' },
-  ];
-  
-  localStorage.setItem(LOCAL_STORAGE_TXNS_KEY, JSON.stringify(defaultItems));
-  return defaultItems;
+  return [];
 };
 
 // Health Check do Backend (/health ou /api/health)
@@ -216,13 +206,33 @@ export const removerTransacao = (id: string): Transaction[] => {
   return updated;
 };
 
-export const fetchDashboardStats = async (period: string = 'this_month') => {
+export interface Meta {
+  id?: string;
+  usuario_id: string;
+  meta_gasto_mensal: number;
+  meta_economia_mensal: number;
+  objetivo_economia_total: number;
+  quantidade_meses?: number;
+}
+
+export const fetchDashboardStats = async (startDate: string, endDate: string) => {
+  try {
+    const response = await fetch(`/api/dashboard?usuario_id=${DEFAULT_USER_UUID}&start_date=${startDate}&end_date=${endDate}`);
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch (error) {
+    console.warn("Failed to fetch dashboard stats from API, using fallback", error);
+  }
+
+  // Fallback to local storage logic if backend fails
   const txns = fetchTodasTransacoes();
   
   const totalEntradas = txns.filter(t => t.tipo === 'entrada').reduce((acc, t) => acc + t.valor, 0);
   const totalGastos = txns.filter(t => t.tipo === 'gasto').reduce((acc, t) => acc + t.valor, 0);
   const saldoAtual = totalEntradas - totalGastos;
-  const mediaGastos = totalGastos > 0 ? totalGastos / 30 : 0;
+  const mediaGastos = totalGastos;
+  const mediaEntradas = totalEntradas;
 
   const gastosCatMap: { [cat: string]: number } = {};
   txns.filter(t => t.tipo === 'gasto').forEach(t => {
@@ -233,6 +243,7 @@ export const fetchDashboardStats = async (period: string = 'this_month') => {
     categoria: cat,
     valor: gastosCatMap[cat],
     percentual: totalGastos > 0 ? (gastosCatMap[cat] / totalGastos) * 100 : 0,
+    mediaValor: 0
   }));
 
   return {
@@ -240,7 +251,67 @@ export const fetchDashboardStats = async (period: string = 'this_month') => {
     totalGastos,
     saldoAtual,
     mediaGastos,
+    mediaEntradas,
     categoryBreakdown,
     transactions: txns,
   };
 };
+
+export const fetchMetas = async (): Promise<Meta | null> => {
+  try {
+    const response = await fetch(`/api/metas?usuario_id=${DEFAULT_USER_UUID}`);
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch (error) {
+    console.error("Failed to fetch metas", error);
+  }
+  return null;
+};
+
+export const salvarMetas = async (meta: Meta): Promise<boolean> => {
+  meta.usuario_id = DEFAULT_USER_UUID;
+  try {
+    const response = await fetch('/api/metas', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(meta),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("Failed to save metas", error);
+    return false;
+  }
+};
+
+
+export const calcularPrazoMeta = async (meta: Meta) => {
+    meta.usuario_id = DEFAULT_USER_UUID; 
+
+    try {
+      // Mudei para POST, pois o backend usa c.ShouldBindJSON
+      const response = await fetch('/api/prazoMetas', {
+        method: 'POST', 
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          usuario_id: meta.usuario_id,
+          objetivo_economia_total: meta.objetivo_economia_total
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao calcular a meta');
+      }
+      meta.quantidade_meses = data.quantidade_meses;
+      return meta; 
+    } catch (error) {
+      console.error("Erro na requisição:", error);
+      throw error;
+    }
+};
+

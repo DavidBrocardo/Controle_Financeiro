@@ -15,10 +15,17 @@ func SetupRoutes(r *gin.Engine, cfg config.Config, db *pgxpool.Pool) {
 
 	// API group
 	api := r.Group("/api")
+
 	{
 		// Gastos endpoint
 		api.POST("/gastos", handler.NewGastoHandler(db).CreateGasto)
 		// Entradas endpoint
 		api.POST("/entradas", handler.NewEntradaHandler(db).CreateEntrada)
+		// Metas endpoint
+		api.GET("/metas", handler.NewMetaHandler(db).GetMeta)
+		api.POST("/metas", handler.NewMetaHandler(db).UpsertMeta)
+		api.POST("/prazoMetas", handler.NewMetaHandler(db).CalcularPrazoMeta)
+		// Dashboard endpoint
+		api.GET("/dashboard", handler.NewDashboardHandler(db).GetDashboardStats)
 	}
 }

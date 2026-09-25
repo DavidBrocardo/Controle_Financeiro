@@ -418,7 +418,7 @@ const RegistroPage: React.FC = () => {
               <span>
                 {isSubmitting 
                   ? 'Enviando...' 
-                  : activeFormTab === 'gasto' ? 'Salvar Gasto (POST /api/gastos)' : 'Salvar Entrada (POST /api/entradas)'}
+                  : activeFormTab === 'gasto' ? 'Salvar Gasto' : 'Salvar Entrada'}
               </span>
             </button>
           </div>

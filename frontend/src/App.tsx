@@ -3,9 +3,10 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import DashboardPage from './pages/Dashboard';
 import RegistroPage from './pages/Registro';
+import MetasPage from './pages/Metas';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'registro' | 'dashboard'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'registro' | 'dashboard' | 'metas'>('dashboard');
 
   return (
     <div className="app-container">
@@ -19,11 +20,9 @@ function App() {
 
         {/* Dynamic Content Body based on selected tab */}
         <main className="content-body">
-          {activeTab === 'dashboard' ? (
-            <DashboardPage />
-          ) : (
-            <RegistroPage />
-          )}
+          {activeTab === 'dashboard' && <DashboardPage />}
+          {activeTab === 'registro' && <RegistroPage />}
+          {activeTab === 'metas' && <MetasPage />}
         </main>
       </div>
     </div>

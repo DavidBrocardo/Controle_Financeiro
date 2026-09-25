@@ -1,18 +1,23 @@
 package services
 
-import "controle-financeiro/backend/internal/models"
+import (
+	"context"
+	"controle-financeiro/backend/internal/models"
+	"controle-financeiro/backend/internal/repositories"
+)
 
-type DashboardService struct{}
-
-func NewDashboardService() *DashboardService {
-	return &DashboardService{}
+type DashboardService interface {
+	GetDashboardStats(ctx context.Context, usuarioID, startDate, endDate string) (*models.DashboardStats, error)
 }
 
-func (s *DashboardService) GetSummary(totalIncome, totalExpense float64, month string) models.Summary {
-	return models.Summary{
-		TotalIncome:  totalIncome,
-		TotalExpense: totalExpense,
-		Balance:      totalIncome - totalExpense,
-		Month:        month,
-	}
+type dashboardService struct {
+	repo repositories.DashboardRepository
+}
+
+func NewDashboardService(repo repositories.DashboardRepository) DashboardService {
+	return &dashboardService{repo: repo}
+}
+
+func (s *dashboardService) GetDashboardStats(ctx context.Context, usuarioID, startDate, endDate string) (*models.DashboardStats, error) {
+	return s.repo.GetDashboardStats(ctx, usuarioID, startDate, endDate)
 }
