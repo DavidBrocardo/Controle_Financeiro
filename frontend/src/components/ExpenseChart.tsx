@@ -38,8 +38,7 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ transactions }) => {
   };
 
   const categories = getCategoryBreakdown();
-  const totalGastoCalculado = categories.reduce((acc, curr) => acc + curr.valor, 0);
-
+  
   return (
     <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Chart Top Header */}
